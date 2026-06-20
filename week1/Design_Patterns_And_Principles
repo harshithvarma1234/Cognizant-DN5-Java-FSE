@@ -1,0 +1,772 @@
+Exercise 1: Implementing the Singleton Pattern
+
+Question:
+You need to ensure that a logging utility class in your application has only one instance throughout the application lifecycle to ensure consistent logging.
+
+Explanation:
+The Singleton Pattern falls under Creational design patterns. It guarantees that a class has exactly one instance and provides a global access point to that instance.
+
+To implement a thread-safe, robust Singleton in Java:
+
+1.Private Constructor: We make the constructor private to prevent external classes from instantiating the class using the new keyword.
+
+2.Private Static Field: A static variable holds the unique instance of the class.
+
+3.Double-Checked Locking (getInstance): To make it thread-safe and efficient, we use a synchronized block. The first check ensures we don't synchronize unnecessarily once the instance is created, and the second check ensures only one thread creates the instance. The field is marked volatile to prevent compiler optimization issues (instruction reordering).
+
+Code:
+
+class Logger {
+    private static volatile Logger instance;
+    private Logger() {}
+    public static Logger getInstance() {
+        if (instance == null) { // First check (no locking)
+            synchronized (Logger.class) {
+                if (instance == null) { // Second check (with locking)
+                    instance = new Logger();
+                }
+            }
+        }
+        return instance;
+    }
+
+    public void log(String message) {
+        System.out.println("[LOG]: " + message);
+    }
+}
+
+// SingletonPatternExample.java
+public class SingletonPatternExample {
+    public static void main(String[] args) {
+        // Fetching instances
+        Logger logger1 = Logger.getInstance();
+        Logger logger2 = Logger.getInstance();
+
+        logger1.log("Initializing core application components...");
+        logger2.log("Checking database connection state...");
+
+        // Verifying reference equality
+        System.out.println("\n--- Verification ---");
+        System.out.println("Are both logger references identical? " + (logger1 == logger2));
+    }
+}
+
+Output:
+[LOG]: Initializing core application components...
+[LOG]: Checking database connection state...
+
+--- Verification ---
+Are both logger references identical? true
+
+
+Exercise 2: Implementing the Factory Method Pattern
+
+Question
+You are developing a document management system that needs to create different types of documents (e.g., Word, PDF, Excel). Use the Factory Method Pattern to achieve this.
+
+Explanation
+The Factory Method Pattern defines an interface or abstract class for creating an object, but lets subclasses decide which specific class to instantiate.
+
+1.It promotes loose coupling by eliminating the need to bind application-specific classes directly into your code.
+
+2.Instead of writing hardcoded logic like Document doc = new WordDocument(), the client delegates creation to a specialized factory (WordDocumentFactory).
+
+3.This satisfies the Open/Closed Principle: if you need to add a new document type (e.g., Markdown), you simply create a MarkdownDocument and a MarkdownDocumentFactory without altering any existing factory code.
+
+code:
+
+interface Document {
+    void open();
+}
+
+class WordDocument implements Document {
+    @Override
+    public void open() { System.out.println("Opening Word Document (.docx)..."); }
+}
+
+class PdfDocument implements Document {
+    @Override
+    public void open() { System.out.println("Opening PDF Document (.pdf)..."); }
+}
+
+class ExcelDocument implements Document {
+    @Override
+    public void open() { System.out.println("Opening Excel Document (.xlsx)..."); }
+}
+abstract class DocumentFactory {
+    public abstract Document createDocument();
+}
+class WordDocumentFactory extends DocumentFactory {
+    @Override
+    public Document createDocument() { return new WordDocument(); }
+}
+
+class PdfDocumentFactory extends DocumentFactory {
+    @Override
+    public Document createDocument() { return new PdfDocument(); }
+}
+
+class ExcelDocumentFactory extends DocumentFactory {
+    @Override
+    public Document createDocument() { return new ExcelDocument(); }
+}
+
+// FactoryMethodPatternExample.java
+public class FactoryMethodPatternExample {
+    public static void main(String[] args) {
+        // Instantiate factories
+        DocumentFactory wordCreator = new WordDocumentFactory();
+        DocumentFactory pdfCreator = new PdfDocumentFactory();
+
+        // Manufacture documents polymorphism-style
+        Document doc1 = wordCreator.createDocument();
+        Document doc2 = pdfCreator.createDocument();
+
+        doc1.open();
+        doc2.open();
+    }
+}
+
+Exercise 3: Implementing the Builder Pattern
+
+Question
+You are developing a system to create complex objects such as a Computer with multiple optional parts. Use the Builder Pattern to manage the construction process.
+
+Explanation
+The Builder Pattern separates the construction of a complex object from its actual internal representation.
+
+This solves the Telescoping Constructor problem (where a class has multiple constructors with long, confusing lists of optional parameters) and avoids using mutable objects with setters that can be left in an incomplete state.
+
+The Computer class has fields that are final, ensuring immutability.
+
+A public, static inner class called Builder contains the exact same fields and provides fluent methods (methods returning this) to configure options step-by-step.
+
+The .build() method passes the builder instance into a private Computer constructor, creating a fully configured, immutable object securely.
+
+code:
+// Computer.java
+class Computer {
+    // Immutability guaranteed via final attributes
+    private final String CPU;
+    private final String RAM;
+    private final String Storage;
+
+    // Private constructor accepting the Builder
+    private Computer(Builder builder) {
+        this.CPU = builder.CPU;
+        this.RAM = builder.RAM;
+        this.Storage = builder.Storage;
+    }
+
+    @Override
+    public String toString() {
+        return "Computer Specs [CPU=" + (CPU != null ? CPU : "None") + 
+               ", RAM=" + (RAM != null ? RAM : "None") + 
+               ", Storage=" + (Storage != null ? Storage : "None") + "]";
+    }
+
+    // Static nested Builder class
+    public static class Builder {
+        private String CPU;
+        private String RAM;
+        private String Storage;
+
+        public Builder setCPU(String CPU) {
+            this.CPU = CPU;
+            return this; // Allows method chaining
+        }
+
+        public Builder setRAM(String RAM) {
+            this.RAM = RAM;
+            return this;
+        }
+
+        public Builder setStorage(String Storage) {
+            this.Storage = Storage;
+            return this;
+        }
+
+        // Returns the final constructed object
+        public Computer build() {
+            return new Computer(this);
+        }
+    }
+}
+
+// BuilderPatternExample.java
+public class BuilderPatternExample {
+    public static void main(String[] args) {
+        // Constructing a high-end gaming PC configuration
+        Computer gamingPC = new Computer.Builder()
+                .setCPU("AMD Ryzen 9")
+                .setRAM("32GB DDR5")
+                .setStorage("2TB NVMe SSD")
+                .build();
+
+        // Constructing a budget office workstation with missing optional storage
+        Computer officePC = new Computer.Builder()
+                .setCPU("Intel i3")
+                .setRAM("8GB")
+                .build();
+
+        System.out.println(gamingPC);
+        System.out.println(officePC);
+    }
+}
+
+Exercise 4: Implementing the Adapter Pattern
+
+Question
+You are developing a payment processing system that needs to integrate with multiple third-party payment gateways with different interfaces. Use the Adapter Pattern to achieve this.
+
+Explanation
+The Adapter Pattern is a Structural pattern that allows objects with incompatible interfaces to work together. It serves as a wrapper or translator between your clean application code and legacy or third-party systems.
+
+Target Interface (PaymentProcessor): The standard domain interface your application uses (processPayment).
+
+Adaptees (PayPalGateway, StripeGateway): Third-party software with completely custom, unchangeable method signatures like sendPaypalPayment or captureStripeCharge.
+
+Adapters (PayPalAdapter, StripeAdapter): Classes that implement the PaymentProcessor interface, receive the third-party instances via their constructor, and internally translate standard parameter structures to match the format expected by the third-party gateway.
+
+code:
+// Target Interface
+interface PaymentProcessor {
+    void processPayment(double amount);
+}
+
+// Adaptee A (Third-party)
+class PayPalGateway {
+    public void sendPaypalPayment(double amountInUSD) {
+        System.out.println("Dispatched PayPal transactional ledger: $" + amountInUSD);
+    }
+}
+
+// Adaptee B (Third-party)
+class StripeGateway {
+    public void captureStripeCharge(int amountInCents) {
+        System.out.println("Captured Stripe charge payload: " + amountInCents + " cents");
+    }
+}
+
+// Adapter for PayPal
+class PayPalAdapter implements PaymentProcessor {
+    private final PayPalGateway payPalGateway;
+
+    public PayPalAdapter(PayPalGateway payPalGateway) {
+        this.payPalGateway = payPalGateway;
+    }
+
+    @Override
+    public void processPayment(double amount) {
+        payPalGateway.sendPaypalPayment(amount);
+    }
+}
+
+// Adapter for Stripe
+class StripeAdapter implements PaymentProcessor {
+    private final StripeGateway stripeGateway;
+
+    public StripeAdapter(StripeGateway stripeGateway) {
+        this.stripeGateway = stripeGateway;
+    }
+
+    @Override
+    public void processPayment(double amount) {
+        // Translate double dollars into an integer of cents
+        int cents = (int) (amount * 100);
+        stripeGateway.captureStripeCharge(cents);
+    }
+}
+
+// AdapterPatternExample.java
+public class AdapterPatternExample {
+    public static void main(String[] args) {
+        // The client code interacts strictly with the Target Interface
+        PaymentProcessor processor1 = new PayPalAdapter(new PayPalGateway());
+        PaymentProcessor processor2 = new StripeAdapter(new StripeGateway());
+
+        System.out.println("Processing client checkouts via unified API interface:");
+        processor1.processPayment(49.99);
+        processor2.processPayment(10.00);
+    }
+}
+
+Exercise 5: Implementing the Decorator Pattern
+Question
+You are developing a notification system where notifications can be sent via multiple channels (e.g., Email, SMS). Use the Decorator Pattern to add functionalities dynamically.
+
+code:
+// Component Interface
+interface Notifier {
+    void send(String message);
+}
+
+// Concrete Component (The core layer)
+class EmailNotifier implements Notifier {
+    @Override
+    public void send(String message) {
+        System.out.println("Email Broadcast -> " + message);
+    }
+}
+
+// Base Decorator Class
+abstract class NotifierDecorator implements Notifier {
+    protected Notifier wrappedNotifier;
+
+    public NotifierDecorator(Notifier notifier) {
+        this.wrappedNotifier = notifier;
+    }
+
+    @Override
+    public void send(String message) {
+        wrappedNotifier.send(message); // Forward to the wrapped object
+    }
+}
+
+// Concrete Decorator A
+class SMSNotifierDecorator extends NotifierDecorator {
+    public SMSNotifierDecorator(Notifier notifier) { super(notifier); }
+
+    @Override
+    public void send(String message) {
+        super.send(message); // Send previous layers
+        sendSMS(message);    // Add SMS specific functionality
+    }
+
+    private void sendSMS(String message) {
+        System.out.println("SMS Text Alert -> " + message);
+    }
+}
+
+// Concrete Decorator B
+class SlackNotifierDecorator extends NotifierDecorator {
+    public SlackNotifierDecorator(Notifier notifier) { super(notifier); }
+
+    @Override
+    public void send(String message) {
+        super.send(message);
+        sendSlack(message);
+    }
+
+    private void sendSlack(String message) {
+        System.out.println("Slack Webhook Pin -> " + message);
+    }
+}
+
+// DecoratorPatternExample.java
+public class DecoratorPatternExample {
+    public static void main(String[] args) {
+        System.out.println("--- Scenario 1: Base Email Only ---");
+        Notifier simpleAlert = new EmailNotifier();
+        simpleAlert.send("Server down alert!");
+
+        System.out.println("\n--- Scenario 2: Multi-Channel Wrapper (Email + SMS + Slack) ---");
+        // Dynamically wrapping objects inside objects
+        Notifier dynamicMultiAlert = new SlackNotifierDecorator(
+                                        new SMSNotifierDecorator(
+                                            new EmailNotifier()
+                                        ));
+        dynamicMultiAlert.send("Database critical memory exception threshold!");
+    }
+}
+
+Exercise 6: Implementing the Proxy Pattern
+Question
+You are developing an image viewer application that loads images from a remote server. Use the Proxy Pattern to add lazy initialization and caching.
+
+code:
+// Subject Interface
+interface Image {
+    void display();
+}
+
+// Real Subject (Heavy to initialize)
+class RealImage implements Image {
+    private final String fileName;
+
+    public RealImage(String fileName) {
+        this.fileName = fileName;
+        loadFromRemoteServer();
+    }
+
+    private void loadFromRemoteServer() {
+        System.out.println("Network I/O: Downloading heavy asset [" + fileName + "] from cloud...");
+    }
+
+    @Override
+    public void display() {
+        System.out.println("Rendering Image Canvas: " + fileName);
+    }
+}
+
+// Proxy Subject (Controls lazy execution and memory caching)
+class ProxyImage implements Image {
+    private final String fileName;
+    private RealImage realImage; // Cached reference pointer
+
+    public ProxyImage(String fileName) {
+        this.fileName = fileName;
+    }
+
+    @Override
+    public void display() {
+        // Lazy loading & caching mechanism
+        if (realImage == null) {
+            realImage = new RealImage(fileName);
+        } else {
+            System.out.println("Cache Hit: Asset loaded from local memory.");
+        }
+        realImage.display();
+    }
+}
+
+// ProxyPatternExample.java
+public class ProxyPatternExample {
+    public static void main(String[] args) {
+        Image image = new ProxyImage("photo_4k_raw.tiff");
+
+        System.out.println("--- First Call (Triggering Network Action) ---");
+        image.display();
+
+        System.out.println("\n--- Second Call (Triggering Cached Execution) ---");
+        image.display();
+    }
+}
+
+Exercise 7: Implementing the Observer Pattern
+Question
+You are developing a stock market monitoring application where multiple clients need to be notified whenever stock prices change. Use the Observer Pattern to achieve this.
+
+code:
+import java.util.ArrayList;
+import java.util.List;
+
+// Observer Interface
+interface Observer {
+    void update(double stockPrice);
+}
+
+// Subject Interface
+interface Stock {
+    void register(Observer o);
+    void deregister(Observer o);
+    void notifyObservers();
+}
+
+// Concrete Subject
+class StockMarket implements Stock {
+    private final List<Observer> observers = new ArrayList<>();
+    private double applePrice;
+
+    public void setPrice(double price) {
+        this.applePrice = price;
+        notifyObservers(); // Trigger updates immediately upon price changes
+    }
+
+    @Override
+    public void register(Observer o) { observers.add(o); }
+
+    @Override
+    public void deregister(Observer o) { observers.remove(o); }
+
+    @Override
+    public void notifyObservers() {
+        for (Observer observer : observers) {
+            observer.update(applePrice);
+        }
+    }
+}
+
+// Concrete Observer A
+class MobileApp implements Observer {
+    @Override
+    public void update(double stockPrice) {
+        System.out.println("Mobile App Notification -> Apple Stock: $" + stockPrice);
+    }
+}
+
+// Concrete Observer B
+class WebApp implements Observer {
+    @Override
+    public void update(double stockPrice) {
+        System.out.println("Web Dashboard Live Feed -> Apple Stock: $" + stockPrice);
+    }
+}
+
+// ObserverPatternExample.java
+public class ObserverPatternExample {
+    public static void main(String[] args) {
+        StockMarket marketFeed = new StockMarket();
+
+        Observer iPhoneClient = new MobileApp();
+        Observer chromeClient = new WebApp();
+
+        marketFeed.register(iPhoneClient);
+        marketFeed.register(chromeClient);
+
+        System.out.println("--- Market Feed Event 1 ---");
+        marketFeed.setPrice(182.50);
+
+        System.out.println("\n--- Market Feed Event 2 (Chrome Client disconnects) ---");
+        marketFeed.deregister(chromeClient);
+        marketFeed.setPrice(184.10);
+    }
+}
+
+Exercise 8: Implementing the Strategy Pattern
+Question
+You are developing a payment system where different payment methods (e.g., Credit Card, PayPal) can be selected at runtime. Use the Strategy Pattern to achieve this.
+
+code:
+// Strategy Interface
+interface PaymentStrategy {
+    void pay(double amount);
+}
+
+// Concrete Strategy A
+class CreditCardPayment implements PaymentStrategy {
+    @Override
+    public void pay(double amount) {
+        System.out.println("Processed checkout payment of $" + amount + " through a Credit Card Secure Portal.");
+    }
+}
+
+// Concrete Strategy B
+class PayPalPayment implements PaymentStrategy {
+    @Override
+    public void pay(double amount) {
+        System.out.println("Processed checkout payment of $" + amount + " through an authenticated PayPal express route.");
+    }
+}
+
+// Context Class
+class PaymentContext {
+    private PaymentStrategy paymentStrategy;
+
+    // Dynamically update strategies at runtime
+    public void setPaymentStrategy(PaymentStrategy strategy) {
+        this.paymentStrategy = strategy;
+    }
+
+    public void executePayment(double amount) {
+        if (paymentStrategy == null) {
+            System.out.println("Error: No algorithmic strategy runtime method has been declared.");
+            return;
+        }
+        paymentStrategy.pay(amount);
+    }
+}
+
+// StrategyPatternExample.java
+public class StrategyPatternExample {
+    public static void main(String[] args) {
+        PaymentContext cart = new PaymentContext();
+
+        System.out.println("User selects Option 1:");
+        cart.setPaymentStrategy(new CreditCardPayment());
+        cart.executePayment(250.00);
+
+        System.out.println("\nUser updates choice to Option 2:");
+        cart.setPaymentStrategy(new PayPalPayment());
+        cart.executePayment(45.50);
+    }
+}
+
+Exercise 9: Implementing the Command Pattern
+Question
+You are developing a home automation system where commands can be issued to turn devices on or off. Use the Command Pattern to achieve this.
+
+code:
+// Command Interface
+interface Command {
+    void execute();
+}
+
+// Receiver Class (Knows the explicit underlying device logic)
+class Light {
+    public void turnOn() { System.out.println("The smart bulb filament is glowing [ON]."); }
+    public void turnOff() { System.out.println("The smart bulb filament is dark [OFF]."); }
+}
+
+// Concrete Command for Turning Light On
+class LightOnCommand implements Command {
+    private final Light light;
+    public LightOnCommand(Light light) { this.light = light; }
+
+    @Override
+    public void execute() { light.turnOn(); }
+}
+
+// Concrete Command for Turning Light Off
+class LightOffCommand implements Command {
+    private final Light light;
+    public LightOffCommand(Light light) { this.light = light; }
+
+    @Override
+    public void execute() { light.turnOff(); }
+}
+
+// Invoker Class
+class RemoteControl {
+    private Command slots;
+
+    public void setCommand(Command command) {
+        this.slots = command;
+    }
+
+    public void pressButton() {
+        slots.execute();
+    }
+}
+
+// CommandPatternExample.java
+public class CommandPatternExample {
+    public static void main(String[] args) {
+        // 1. Setup Receiver
+        Light livingRoomLight = new Light();
+
+        // 2. Wrap actions into standalone command payloads
+        Command turnOn = new LightOnCommand(livingRoomLight);
+        Command turnOff = new LightOffCommand(livingRoomLight);
+
+        // 3. Setup Invoker
+        RemoteControl remote = new RemoteControl();
+
+        // Simulate interactive hardware buttons
+        remote.setCommand(turnOn);
+        remote.pressButton();
+
+        remote.setCommand(turnOff);
+        remote.pressButton();
+    }
+}
+
+
+Exercise 10: Implementing the MVC Pattern
+Question
+You are developing a simple web application for managing student records using the MVC pattern.
+
+code:
+// Model Class
+class Student {
+    private String name;
+    private String id;
+    private String grade;
+
+    public Student(String name, String id, String grade) {
+        this.name = name;
+        this.id = id;
+        this.grade = grade;
+    }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getGrade() { return grade; }
+    public void setGrade(String grade) { this.grade = grade; }
+}
+
+// View Class
+class StudentView {
+    public void displayStudentDetails(String studentName, String studentId, String studentGrade) {
+        System.out.println("---------------------------------");
+        System.out.println("STUDENT ACADEMIC DASHBOARD LOG:");
+        System.out.println("ID:    " + studentId);
+        System.out.println("Name:  " + studentName);
+        System.out.println("Grade: " + studentGrade);
+        System.out.println("---------------------------------");
+    }
+}
+
+// Controller Class
+class StudentController {
+    private final Student model;
+    private final StudentView view;
+
+    public StudentController(Student model, StudentView view) {
+        this.model = model;
+        this.view = view;
+    }
+
+    public void setStudentName(String name) { model.setName(name); }
+    public String getStudentName() { return model.getName(); }
+    public void setStudentGrade(String grade) { model.setGrade(grade); }
+    public String getStudentGrade() { return model.getGrade(); }
+
+    // Synchronize updates between Model and View
+    public void updateView() {
+        view.displayStudentDetails(model.getName(), model.getId(), model.getGrade());
+    }
+}
+
+// MVCPatternExample.java
+public class MVCPatternExample {
+    public static void main(String[] args) {
+        // Instantiate the Model data object
+        Student modelRecord = new Student("Tony Stark", "STU-007", "A");
+        StudentView clientTerminal = new StudentView();
+
+        // Wire everything into the Controller
+        StudentController systemEngine = new StudentController(modelRecord, clientTerminal);
+
+        // Initial view rendering
+        systemEngine.updateView();
+
+        // Modify model properties securely through the controller
+        systemEngine.setStudentGrade("A+");
+        systemEngine.setStudentName("Anthony Stark");
+
+        // Render the updated data
+        systemEngine.updateView();
+    }
+}
+
+Exercise 11: Implementing Dependency Injection
+Question
+You are developing a customer management application where the service class depends on a repository class. Use Dependency Injection to manage these dependencies.
+
+code:
+// Repository Interface
+interface CustomerRepository {
+    String findCustomerById(String id);
+}
+
+// Concrete Repository Implementation
+class CustomerRepositoryImpl implements CustomerRepository {
+    @Override
+    public String findCustomerById(String id) {
+        // Simulate database lookup query execution routine
+        return "Customer DB Record [ID=" + id + ", Name=Bruce Wayne, Tier=VIP]";
+    }
+}
+
+// Service Class utilizing Constructor Injection
+class CustomerService {
+    // Decoupled reference to the interface, not a concrete class
+    private final CustomerRepository repository;
+
+    // Dependency is injected from the outside via this constructor
+    public CustomerService(CustomerRepository repository) {
+        this.repository = repository;
+    }
+
+    public void processCustomerLookup(String id) {
+        String result = repository.findCustomerById(id);
+        System.out.println("Processing Core Business Logic Engine -> " + result);
+    }
+}
+
+// DependencyInjectionExample.java
+public class DependencyInjectionExample {
+    public static void main(String[] args) {
+        // 1. Instantiate dependencies (This configuration step mirrors how frameworks like Spring work)
+        CustomerRepository productionDatabase = new CustomerRepositoryImpl();
+
+        // 2. Inject the dependency into the service class instance
+        CustomerService corporateService = new CustomerService(productionDatabase);
+
+        // 3. Execute application operations smoothly
+        corporateService.processCustomerLookup("CUST-999");
+    }
+}
