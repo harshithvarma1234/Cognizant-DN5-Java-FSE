@@ -1,0 +1,577 @@
+                    JUnit Testing Exercises
+Exercise 1: Setting Up JUnit
+Scenario:
+You need to set up JUnit in your Java project to start writing unit tests.
+CODE:
+Main Class (Calculator.java):
+public class Calculator {
+    public int add(int a, int b) {
+        return a + b;
+    }
+
+    public int subtract(int a, int b) {
+        return a - b;
+    }
+}
+Test Class (CalculatorTest.java):
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class CalculatorTest {
+    @Test
+    public void testAdd() {
+        Calculator calculator = new Calculator();
+        int result = calculator.add(10, 5);
+        assertEquals(15, result);
+    }
+
+    @Test
+    public void testSubtract() {
+        Calculator calculator = new Calculator();
+        int result = calculator.subtract(10, 5);
+        assertEquals(5, result);
+    }
+}
+
+Exercise 3: Assertions in JUnit
+Scenario:
+You need to use different assertions in JUnit to validate your test results.
+CODE:
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class AssertionsTest {
+    @Test
+    public void testAssertions() {
+        // Assert equals
+        assertEquals(5, 2 + 3);
+
+        // Assert true
+        assertTrue(5 > 3);
+
+        // Assert false
+        assertFalse(5 < 3);
+
+        // Assert null
+        assertNull(null);
+
+        // Assert not null
+        assertNotNull(new Object());
+    }
+}
+Exercise 4: Arrange-Act-Assert (AAA) Pattern & Fixtures
+Task: Write tests using the AAA structure along with lifecycle setup and teardown setups (@BeforeEach/@AfterEach).
+CODE:
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class AAAPatternTest {
+    private Calculator calculator;
+
+    @BeforeEach
+    public void setUp() {
+        // Setup fixture
+        calculator = new Calculator();
+        System.out.println("Setup: Calculator instance initialized.");
+    }
+
+    @Test
+    public void testAdditionWithAAAPattern() {
+        // 1. Arrange
+        int a = 20;
+        int b = 30;
+
+        // 2. Act
+        int result = calculator.add(a, b);
+
+        // 3. Assert
+        assertEquals(50, result);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        // Teardown fixture
+        calculator = null;
+        System.out.println("Teardown: Resources cleaned up.");
+    }
+}
+
+                       Advanced JUnit Testing Exercises
+Exercise 1: Parameterized Tests
+Task: Test an EvenChecker class with multiple data inputs using @ParameterizedTest and @ValueSource.
+
+Code
+Main Class (EvenChecker.java):
+public class EvenChecker {
+    public boolean isEven(int number) {
+        return number % 2 == 0;
+    }
+}
+Test Class (EvenCheckerTest.java):
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class EvenCheckerTest {
+    private final EvenChecker checker = new EvenChecker();
+
+    @ParameterizedTest
+    @ValueSource(ints = {2, 4, 12, 40, 102})
+    public void testIsEven(int number) {
+        assertTrue(checker.isEven(number));
+    }
+}
+Exercise 2: Test Suites and Categories
+Task: Group multiple test classes into an executable test suite bundle using @Suite.
+
+Code:
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
+
+@Suite
+@SelectClasses({
+    CalculatorTest.class,
+    EvenCheckerTest.class
+})
+public class AllTests {
+    // This class remains empty. It serves solely as an entry point for the suite.
+}
+Exercise 3: Test Execution Order
+Task: Control the execution sequence of test methods using @TestMethodOrder and @Order.
+
+Code:
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+public class OrderedTests {
+
+    @Test
+    @Order(1)
+    public void stepOne() {
+        System.out.println("Executing Step 1: Initializing configuration.");
+    }
+
+    @Test
+    @Order(2)
+    public void stepTwo() {
+        System.out.println("Executing Step 2: Processing transaction data.");
+    }
+
+    @Test
+    @Order(3)
+    public void stepThree() {
+        System.out.println("Executing Step 3: Validating structural output.");
+    }
+}
+Exercise 4: Exception Testing
+Task: Verify that an intentional error path successfully triggers an expected exception state.
+
+Code
+Main Class (ExceptionThrower.java):
+public class ExceptionThrower {
+    public void throwException() {
+        throw new IllegalArgumentException("Invalid input provided!");
+    }
+}
+Test Class (ExceptionThrowerTest.java):
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class ExceptionThrowerTest {
+    @Test
+    public void testExceptionIsThrown() {
+        ExceptionThrower thrower = new ExceptionThrower();
+
+        // Expect an IllegalArgumentException to occur
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            thrower.throwException();
+        });
+
+        // Verify exception details
+        assertEquals("Invalid input provided!", exception.getMessage());
+    }
+}
+Exercise 5: Timeout and Performance Testing
+Task: Ensure a complex or long-running computational routine finishes inside a designated threshold constraint.
+
+Code
+Main Class (PerformanceTester.java):
+public class PerformanceTester {
+    public void performTask() throws InterruptedException {
+        // Simulate an operational delay of 100 milliseconds
+        Thread.sleep(100);
+    }
+}
+Test Class (PerformanceTesterTest.java):
+import org.junit.jupiter.api.Test;
+import java.time.Duration;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
+
+public class PerformanceTesterTest {
+    @Test
+    public void testPerformanceTimeout() {
+        PerformanceTester tester = new PerformanceTester();
+
+        // Verifies the method completes within a strict 500 millisecond window limit
+        assertTimeout(Duration.ofMillis(500), () -> {
+            tester.performTask();
+        });
+    }
+}
+
+                 Mockito Hands-On Exercises
+Exercise 1: Mocking and Stubbing
+Scenario:
+You need to test a service that depends on an external API. Use Mockito to mock the
+external API and stub its methods.
+Steps:
+1. Create a mock object for the external API.
+2. Stub the methods to return predefined values.
+3. Write a test case that uses the mock object.
+Code:
+import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+public class MyServiceTest 
+{
+ @Test
+ public void testExternalApi()
+  {
+   ExternalApi mockApi = Mockito.mock(ExternalApi.class);
+   when(mockApi.getData()).thenReturn("Mock Data");
+   MyService service = new MyService(mockApi);
+   String result = service.fetchData();
+   assertEquals("Mock Data", result);
+}
+}   
+Exercise 1: Mocking and Stubbing
+Scenario:
+You need to test a service that depends on an external API. Use Mockito to mock the
+external API and stub its methods.
+Steps:
+1. Create a mock object for the external API.
+2. Stub the methods to return predefined values.
+3. Write a test case that uses the mock object.
+Code:
+import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+public class MyServiceTest
+{
+ @Test
+ public void testExternalApi() 
+ {
+  ExternalApi mockApi = Mockito.mock(ExternalApi.class);
+  when(mockApi.getData()).thenReturn("Mock Data");
+  MyService service = new MyService(mockApi);
+  String result = service.fetchData();
+  assertEquals("Mock Data", result);
+}
+}    
+Exercise 3: Argument Matching
+Scenario:
+You need to verify that a method is called with specific arguments.
+Steps:
+1. Create a mock object.
+2. Call the method with specific arguments.
+3. Use argument matchers to verify the interaction
+Code:
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+// Shared interfaces for testing
+interface ExternalApi { 
+    String getData(); 
+    String formatData(String input);
+    void updateStatus(String status);
+}
+class MyService {
+    private ExternalApi api;
+    public MyService(ExternalApi api) { this.api = api; }
+    public String processAndFormat(String raw) { return api.formatData(raw); }
+}
+
+public class MockitoArgumentMatchingTest {
+    @Test
+    public void testArgumentMatching() {
+        ExternalApi mockApi = mock(ExternalApi.class);
+        MyService service = new MyService(mockApi);
+
+        // Stubbing with an argument matcher
+        when(mockApi.formatData(anyString())).thenReturn("Matched Output");
+
+        String result = service.processAndFormat("Some Random Input String");
+        assertEquals("Matched Output", result);
+
+        // Verifying interaction using argument matchers
+        verify(mockApi).formatData(anyString());
+    }
+}
+Exercise 4: Handling Void Methods
+Scenario:
+You need to test a void method that performs some action.
+Steps:
+1. Create a mock object.
+2. Stub the void method.
+3. Verify the interaction.
+Code:
+import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.*;
+
+class VoidMethodService {
+    private ExternalApi api;
+    public VoidMethodService(ExternalApi api) { this.api = api; }
+    public void executeChange(String status) { api.updateStatus(status); }
+}
+
+public class MockitoVoidMethodTest {
+    @Test
+    public void testVoidMethodInteraction() {
+        ExternalApi mockApi = mock(ExternalApi.class);
+        VoidMethodService service = new VoidMethodService(mockApi);
+
+        // Stubbing a void method call explicitly (optional as default behavior is nothing)
+        doNothing().when(mockApi).updateStatus(anyString());
+
+        service.executeChange("Active");
+
+        // Verify the void method was accurately called with the right argument
+        verify(mockApi, times(1)).updateStatus("Active");
+    }
+}
+
+Exercise 6: Verifying Interaction Order
+Question: Write code using Mockito's InOrder API to guarantee that dependencies are executed in a strict chronological sequence.
+Code:
+import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+import static org.mockito.Mockito.*;
+
+public class MockitoOrderVerificationTest {
+    @Test
+    public void testVerificationInOrder() {
+        ExternalApi mockApi = mock(ExternalApi.class);
+        
+        // Simulating the sequential operational workflow
+        mockApi.getData();
+        mockApi.formatData("raw");
+        mockApi.updateStatus("Complete");
+
+        // Set up InOrder wrapper verification
+        InOrder inOrder = inOrder(mockApi);
+
+        // Verify exact execution sequencing
+        inOrder.verify(mockApi).getData();
+        inOrder.verify(mockApi).formatData("raw");
+        inOrder.verify(mockApi).updateStatus("Complete");
+    }
+}
+Exercise 7: Handling Void Methods with Exceptions
+Question: Write code using Mockito's doThrow() strategy to ensure a service properly propagates exceptions when a dependent void method errors out.
+
+Code:
+import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class MockitoVoidExceptionTest {
+    @Test
+    public void testVoidMethodThrowsException() {
+        ExternalApi mockApi = mock(ExternalApi.class);
+        VoidMethodService service = new VoidMethodService(mockApi);
+
+        // Stub void method to throw exception when hit
+        doThrow(new RuntimeException("Database Offline")).when(mockApi).updateStatus("BadData");
+
+        // Assert system fails gracefully / bubbles up the issue
+        assertThrows(RuntimeException.class, () -> {
+            service.executeChange("BadData");
+        });
+    }
+}
+
+             Mocking Dependencies in Spring / Spring Testing Exercises
+Spring Exercise 1: Mocking a Service Dependency in a Controller Test
+Question: Write a isolated web unit test using @WebMvcTest to verify UserController behavior by mocking out UserService.
+
+Code:
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean; // use @MockBean if on older Spring Boot 3.x/2.x variants
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+
+@WebMvcTest(UserController.class)
+public class UserControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean // Automatically hooks into the Spring ApplicationContext mock cycle
+    private UserService userService;
+
+    @Test
+    public void testGetUserById_ControllerUnitLevel() throws Exception {
+        User mockUser = new User(1L, "John Doe");
+        when(userService.getUserById(1L)).thenReturn(mockUser);
+
+        mockMvc.perform(get("/users/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("John Doe"));
+    }
+}
+Spring Exercise 2: Mocking a Repository in a Service Test
+Question: Write a standard unit test for UserService by injecting a mock instance of UserRepository.
+
+Code:
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import java.util.Optional;
+import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith(MockitoExtension.class)
+public class UserServiceTest {
+
+    @Mock
+    private UserRepository userRepository;
+
+    @InjectMocks
+    private UserService userService;
+
+    @Test
+    public void testGetUserById_ServiceUnitLevel() {
+        User targetUser = new User(5L, "Bob");
+        when(userRepository.findById(5L)).thenReturn(Optional.of(targetUser));
+
+        User result = userService.getUserById(5L);
+
+        assertNotNull(result);
+        assertEquals("Bob", result.getName());
+    }
+}
+Spring Exercise 3 & 4: Full Stack Integration Test with Spring Boot
+Question: Write an end-to-end integration test leveraging @SpringBootTest alongside @AutoConfigureMockMvc to test your application slice through to real database components.
+
+Code:
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+public class UserIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    public void testCompletePipelineRoute() throws Exception {
+        // Hits the real controller, which hits real service, which pulls against an in-memory/test DB context.
+        mockMvc.perform(get("/users/1"))
+                .andExpect(status().isOk());
+    }
+}
+Spring Exercise 6: Test Service Exception Handling
+Question: Implement code to ensure UserService correctly throws handling errors if records are absent.
+
+Code:
+import org.junit.jupiter.api.Test;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class UserServiceExceptionTest {
+    @Test
+    public void testServiceThrowsExceptionOnMissingUser() {
+        UserRepository repo = mock(UserRepository.class);
+        // Stubbing repo to return an empty optional structure
+        when(repo.findById(99L)).thenReturn(Optional.empty());
+
+        UserService service = new UserService(repo);
+
+        assertThrows(NoSuchElementException.class, () -> {
+            // Assuming business logic checks and throws NoSuchElementException when missing
+            User user = service.getUserById(99L);
+            if (user == null) throw new NoSuchElementException("User not found");
+        });
+    }
+}
+Spring Exercise 8: Test Controller Exception Handling (@ControllerAdvice)
+Question: Write a unit test validating that the GlobalExceptionHandler converts raw exceptions into clean HTTP status errors.
+
+Code:
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import java.util.NoSuchElementException;
+
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+
+@WebMvcTest(UserController.class)
+public class ControllerAdviceExceptionTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private UserService userService;
+
+    @Test
+    public void testControllerAdviceInterception() throws Exception {
+        // Configure service method to break down internally
+        when(userService.getUserById(404L)).thenThrow(new NoSuchElementException("User not found"));
+
+        mockMvc.perform(get("/users/404"))
+                .andExpect(status().isNotFound()) // Expects custom HTTP 404 Status mapping
+                .andExpect(content().string("User not found"));
+    }
+}
+Spring Exercise 9: Parameterized Test with JUnit
+Question: Write a parameterized Spring input validation unit test using a @ParameterizedTest configuration.
+
+Code:
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class SpringParameterizedInputTest {
+
+    public boolean isValidUsername(String username) {
+        return username != null && username.length() >= 4;
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"admin", "john_doe", "super_user"})
+    public void testValidUsernames(String inputName) {
+        assertTrue(isValidUsername(inputName));
+    }
+}            
