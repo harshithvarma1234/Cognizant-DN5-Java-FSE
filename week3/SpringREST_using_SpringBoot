@@ -1,0 +1,384 @@
+               Part 1: Spring Boot Basics & Spring Core Configuration
+
+Hands-on 1: Create a Spring Web Project using Maven
+Question: How do you generate and bootstrap a standard Spring Boot Web project using Maven and import it into Eclipse with specific proxy settings?
+Code:
+Execute the following commands in your command line terminal to build the project after extracting the zip from [https://start.spring.io](https://start.spring.io):
+mvn clean package -Dhttp.proxyHost=proxy.cognizant.com -Dhttp.proxyPort=6050 -Dhttps.proxyHost=proxy.cognizant.com -Dhttps.proxyPort=6050 -Dhttp.proxyUser=123456
+
+Inside SpringLearnApplication.java:
+package com.cognizant.springlearn;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+@SpringBootApplication
+public class SpringLearnApplication {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SpringLearnApplication.class);
+    public static void main(String[] args) {
+        LOGGER.info("Starting SpringLearn Application...");
+        SpringApplication.run(SpringLearnApplication.class, args);
+        LOGGER.info("SpringLearn Application Started successfully.");
+    }
+}
+
+Hands-on 2: Spring Core – Load SimpleDateFormat from Spring XML
+Question: How do you configure a SimpleDateFormat bean via an external Spring XML configuration file and load it within a Spring Boot application runner?
+Code:
+src/main/resources/date-format.xml:
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="dateFormat" class="java.text.SimpleDateFormat">
+        <constructor-arg value="dd/MM/yyyy" />
+    </bean>
+</beans>
+
+Method in SpringLearnApplication.java:
+public static void displayDate() {
+    ApplicationContext context = new ClassPathXmlApplicationContext("date-format.xml");
+    SimpleDateFormat format = context.getBean("dateFormat", SimpleDateFormat.class);
+    try {
+        Date date = format.parse("31/12/2018");
+        System.out.println(date);
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+
+Hands-on 3: Spring Core – Incorporate Logging
+Question: How do you configure standardized application properties for logging levels and custom patterns, replacing System.out.println() with SLF4J loggers?
+Code:
+src/main/resources/application.properties:
+logging.level.org.springframework=info
+logging.level.com.cognizant.springlearn=debug
+logging.pattern.console=%d{yyMMdd}|%d{HH:mm:ss.SSS}|%-20.20thread|%5p|%-25.25logger{25}|%25M|%m%n
+server.port=8083
+
+Updated displayDate() method in SpringLearnApplication.java:
+public static void displayDate() {
+    LOGGER.info("START");
+    ApplicationContext context = new ClassPathXmlApplicationContext("date-format.xml");
+    SimpleDateFormat format = context.getBean("dateFormat", SimpleDateFormat.class);
+    try {
+        Date date = format.parse("31/12/2018");
+        LOGGER.debug("Parsed Date: {}", date);
+    } catch (Exception e) {
+        LOGGER.error("Error parsing date", e);
+    }
+    LOGGER.info("END");
+}
+
+Hands-on 4: Spring Core – Load Country Bean from XML
+Question: How do you wire up properties into a custom Country bean configuration file using setter injection, trace bean initialization logs, and view results?
+Code:
+src/main/resources/country.xml:
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="country" class="com.cognizant.springlearn.Country">
+        <property name="code" value="IN" />
+        <property name="name" value="India" />
+    </bean>
+</beans>
+
+Country.java:
+package com.cognizant.springlearn;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+public class Country {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Country.class);
+    private String code;
+    private String name;
+    public Country() {
+        LOGGER.debug("Inside Country Constructor.");
+    }
+    public String getCode() {
+        return code;
+    }
+    public void setCode(String code) {
+        LOGGER.debug("Setting Code: {}", code);
+        this.code = code;
+    }
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        LOGGER.debug("Setting Name: {}", name);
+        this.name = name;
+    }
+    @Override
+    public String toString() {
+        return "Country [code=" + code + ", name=" + name + "]";
+    }
+}
+Method in SpringLearnApplication.java:
+public static void displayCountry() {
+    LOGGER.info("START");
+    ApplicationContext context = new ClassPathXmlApplicationContext("country.xml");
+    Country country = context.getBean("country", Country.class);
+    LOGGER.debug("Country : {}", country.toString());
+    LOGGER.info("END");
+}
+
+Hands-on 6: Spring Core – Load List of Countries
+Question: How can multiple individual Spring bean references be aggregated into a standard java.util.ArrayList inside a configuration XML file?
+Code:
+Updated src/main/resources/country.xml:
+<beans xmlns="http://www.springframework.org/schema/beans" ...>
+    <bean id="in" class="com.cognizant.springlearn.Country">
+        <property name="code" value="IN"/><property name="name" value="India"/>
+    </bean>
+    <bean id="us" class="com.cognizant.springlearn.Country">
+        <property name="code" value="US"/><property name="name" value="United States"/>
+    </bean>
+    <bean id="de" class="com.cognizant.springlearn.Country">
+        <property name="code" value="DE"/><property name="name" value="Germany"/>
+    </bean>
+    <bean id="jp" class="com.cognizant.springlearn.Country">
+        <property name="code" value="JP"/><property name="name" value="Japan"/>
+    </bean>
+
+    <bean id="countryList" class="java.util.ArrayList">
+        <constructor-arg>
+            <list>
+                <ref bean="in" />
+                <ref bean="us" />
+                <ref bean="de" />
+                <ref bean="jp" />
+            </list>
+        </constructor-arg>
+    </bean>
+</beans>
+
+Method in SpringLearnApplication.java:
+public static void displayCountries() {
+    LOGGER.info("START");
+    ApplicationContext context = new ClassPathXmlApplicationContext("country.xml");
+    ArrayList<Country> list = context.getBean("countryList", ArrayList.class);
+    LOGGER.debug("Country List: {}", list);
+    LOGGER.info("END");
+}
+
+                   Part 2: Building RESTful Web Services & Testing
+
+Hands-on: Hello World RESTful Web Service
+Question: How do you build a minimal Spring Boot RestController returning a simple string text with logging metrics?
+Code:
+HelloController.java:
+package com.cognizant.springlearn.controller;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+@RestController
+public class HelloController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HelloController.class);
+    @GetMapping("/hello")
+    public String sayHello() {
+        LOGGER.info("START - sayHello URI triggered");
+        String message = "Hello World!!";
+        LOGGER.info("END - sayHello URI completing");
+        return message;
+    }
+}
+
+Hands-on: REST - Country Web Service & Get All Countries
+Question: How can you bridge Spring Core XML declarations with Web layer endpoints to fetch specific or comprehensive country listings transformed into JSON structures?
+Code:
+CountryController.java:
+package com.cognizant.springlearn.controller;
+
+import com.cognizant.springlearn.Country;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import java.util.ArrayList;
+@RestController
+@RequestMapping("/countries")
+public class CountryController {
+    private final ApplicationContext context = new ClassPathXmlApplicationContext("country.xml");
+    @GetMapping("/india")
+    public Country getCountryIndia() {
+        return context.getBean("in", Country.class);
+    }
+    @GetMapping
+    public ArrayList<Country> getAllCountries() {
+        return context.getBean("countryList", ArrayList.class);
+    }
+}
+
+Hands-on: REST - Get Country with Exceptional Scenario & MockMVC Testing
+Question: How can dynamic request matching via path parameters handle exceptional conditions (e.g., missing keys) elegantly using HTTP error response status schemas, and how do you test them with MockMVC?
+Code:
+CountryNotFoundException.java:
+package com.cognizant.springlearn.service.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+@ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "Country not found")
+public class CountryNotFoundException extends Exception {
+}
+
+CountryService.java:
+package com.cognizant.springlearn.service;
+
+import com.cognizant.springlearn.Country;
+import com.cognizant.springlearn.service.exception.CountryNotFoundException;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.stereotype.Service;
+import java.util.ArrayList;
+@Service
+public class CountryService {
+    private final ArrayList<Country> countries = new ClassPathXmlApplicationContext("country.xml").getBean("countryList", ArrayList.class);
+    public Country getCountry(String code) throws CountryNotFoundException {
+        return countries.stream()
+                .filter(c -> c.getCode().equalsIgnoreCase(code))
+                .findFirst()
+                .orElseThrow(CountryNotFoundException::new);
+    }
+}
+
+CountryController.java addition:
+@GetMapping("/{code}")
+public Country getCountry(@PathVariable String code) throws CountryNotFoundException {
+    return countryService.getCountry(code);
+}
+
+SpringLearnApplicationTests.java:
+package com.cognizant.springlearn;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+@SpringBootTest
+@AutoConfigureMockMvc
+public class SpringLearnApplicationTests {
+    @Autowired
+    private MockMvc mvc;
+    @Test
+    public void testGetCountry() throws Exception {
+        ResultActions actions = mvc.perform(get("/countries/IN"));
+        actions.andExpect(status().isOk())
+               .andExpect(jsonPath("$.code").exists())
+               .andExpect(jsonPath("$.code").value("IN"))
+               .andExpect(jsonPath("$.name").value("India"));
+    }
+    @Test
+    public void testGetCountryException() throws Exception {
+        ResultActions actions = mvc.perform(get("/countries/AZ"));
+        actions.andExpect(status().isNotFound());
+    }
+}
+
+               Part 3: Layered Architecture (Controller-Service-DAO)
+
+Hands-on: Employee & Department Enterprise Application SetupQuestion: How do you map structural data to an isolated XML context layer and configure a clean Controller $\rightarrow$ Service $\rightarrow$ DAO implementation?Code:EmployeeDao.java:Javapackage com.cognizant.springlearn.dao;
+import com.cognizant.springlearn.Employee;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.stereotype.Repository;
+import java.util.ArrayList;
+@Repository
+public class EmployeeDao {
+    private static ArrayList<Employee> EMPLOYEE_LIST = new ArrayList<>();
+    public EmployeeDao() {
+        ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("employee.xml");
+        EMPLOYEE_LIST = ctx.getBean("employeeList", ArrayList.class);
+    }
+    public ArrayList<Employee> getAllEmployees() {
+        return EMPLOYEE_LIST;
+    }
+}
+EmployeeService.java:Javapackage com.cognizant.springlearn.service;
+
+import com.cognizant.springlearn.dao.EmployeeDao;
+import com.cognizant.springlearn.Employee;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import javax.transaction.Transactional;
+import java.util.ArrayList;
+@Service
+public class EmployeeService {
+    @Autowired
+    private EmployeeDao employeeDao;
+    @Transactional
+    public ArrayList<Employee> getAllEmployees() {
+        return employeeDao.getAllEmployees();
+    }
+}
+EmployeeController.java:Javapackage com.cognizant.springlearn.controller;
+
+import com.cognizant.springlearn.Employee;
+import com.cognizant.springlearn.service.EmployeeService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+import java.util.ArrayList;
+@RestController
+public class EmployeeController {
+    @Autowired
+    private EmployeeService employeeService;
+    @GetMapping("/employees")
+    public ArrayList<Employee> getAllEmployees() {
+        return employeeService.getAllEmployees();
+    }
+}
+
+
+                Part 4: Input Validation & Global Exception HandlingHands-on: Global 
+
+Handling & Bean Property Binding RulesQuestion: How can inbound structured mutation payloads (POST/PUT) be verified cleanly across an ecosystem using standard JSR-383 annotations and a unified Global Advisor block?
+
+Code:Country.java annotations:Java@NotNull
+@Size(min=2, max=2, message="Country code should be 2 characters")
+private String code;
+GlobalExceptionHandler.java:Javapackage com.cognizant.springlearn;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import java.util.*;
+import java.util.stream.Collectors;
+@ControllerAdvice
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+            HttpHeaders headers, HttpStatus status, WebRequest request) {
+        LOGGER.info("Start Global Validation Exception handling processing");
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", new Date());
+        body.put("status", status.value());
+        List<String> errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(x -> x.getDefaultMessage())
+                .collect(Collectors.toList());
+                body.put("errors", errors);
+        LOGGER.info("End Global Validation Exception interceptor run");
+        return new ResponseEntity<>(body, headers, status);
+    }
+}
+CountryController.java method addition:Java@PostMapping
+public Country addCountry(@RequestBody @Valid Country country) {
+    return country;
+}

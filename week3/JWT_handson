@@ -1,0 +1,90 @@
+               Application Security (Spring Security & JWT Validation)
+
+Hands-on: Implementing In-Memory Basic Auth & Intercepting Filters for JSON Web Tokens
+Question: How do you set up an in-memory credential manager with authorization policies using standard filters to extract, decode, and evaluate state-free JWTs?
+Code:
+SecurityConfig.java:
+package com.cognizant.springlearn.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.inMemoryAuthentication()
+            .withUser("admin").password(passwordEncoder().encode("pwd")).roles("ADMIN")
+            .and()
+            .withUser("user").password(passwordEncoder().encode("pwd")).roles("USER");
+    }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+    @Override
+    protected void configure(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity.csrf().disable()
+            .httpBasic().and()
+            .authorizeRequests()
+            .antMatchers("/authenticate").hasAnyRole("USER", "ADMIN")
+            .anyRequest().authenticated()
+            .and()
+            .addFilter(new JwtAuthorizationFilter(authenticationManager()));
+    }
+}
+
+JwtAuthorizationFilter.java:
+package com.cognizant.springlearn.security;
+
+import io.jsonwebtoken.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.ArrayList;
+public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
+    public JwtAuthorizationFilter(AuthenticationManager authManager) {
+        super(authManager);
+    }
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) 
+            throws IOException, ServletException {
+        String header = req.getHeader("Authorization");
+        if (header == null || !header.startsWith("Bearer ")) {
+            chain.doFilter(req, res);
+            return;
+        }
+        UsernamePasswordAuthenticationToken authentication = getAuthentication(req);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        chain.doFilter(req, res);
+    }
+    private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token != null) {
+            try {
+                Jws<Claims> jws = Jwts.parser()
+                        .setSigningKey("secretkey")
+                        .parseClaimsJws(token.replace("Bearer ", ""));
+                String user = jws.getBody().getSubject();
+                if (user != null) {
+                    return new UsernamePasswordAuthenticationToken(user, null, new ArrayList<>());
+                }
+            } catch (JwtException ex) {
+                return null;
+            }
+        }
+        return null;
+    }
+}
